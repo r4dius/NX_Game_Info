@@ -1060,7 +1060,7 @@ namespace NX_Game_Info
                         .Replace("{v}", title.version.ToString())
                         .Replace("{w}", (title.version >= 65536 ? title.version / 65536 : 0).ToString())
                         .Replace("{d}", title.displayVersion),
-                        String.Format("[{0}]", Regex.Escape(new string(Path.GetInvalidFileNameChars()))), "") + Path.GetExtension(filename));
+                        String.Format("[{0}]", Regex.Escape(new string(Path.GetInvalidFileNameChars()))), " ").Replace(@"\s+", " ") + Path.GetExtension(filename));
 
                     if (filename == newname)
                     {
