@@ -1053,14 +1053,14 @@ namespace NX_Game_Info
                     title = (Title)item.RowObject;
 
                     string filename = Path.GetFullPath(title.filename);
-                    string newname = Path.Combine(Path.GetDirectoryName(filename), Regex.Replace(Common.Settings.Default.RenameFormat
+                    string newname = Regex.Replace(Path.Combine(Path.GetDirectoryName(filename), Regex.Replace(Common.Settings.Default.RenameFormat
                         .Replace("{n}", title.titleName)
                         .Replace("{i}", title.titleID)
                         .Replace("{j}", title.baseTitleID)
                         .Replace("{v}", title.version.ToString())
                         .Replace("{w}", (title.version >= 65536 ? title.version / 65536 : 0).ToString())
                         .Replace("{d}", title.displayVersion),
-                        String.Format("[{0}]", Regex.Escape(new string(Path.GetInvalidFileNameChars()))), " ").Replace(@"\s+", " ") + Path.GetExtension(filename));
+                        String.Format("[{0}]", Regex.Escape(new string(Path.GetInvalidFileNameChars()))), " ") + Path.GetExtension(filename)), @"\s+", " ");
 
                     if (filename == newname)
                     {
