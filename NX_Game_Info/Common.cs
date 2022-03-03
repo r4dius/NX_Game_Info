@@ -101,7 +101,7 @@ namespace NX_Game_Info
             }
 
             [UserScopedSetting()]
-            [DefaultSettingValue("False")]
+            [DefaultSettingValue("True")]
             public bool NszExtension
             {
                 get { return (bool)this["NszExtension"]; }

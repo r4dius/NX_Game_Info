@@ -651,6 +651,14 @@ namespace NX_Game_Info
                 }
             }
 
+            if (title.type == TitleType.AddOnContent)
+            {
+                if (versionList.TryGetValue(title.titleID, out uint version))
+                {
+                    title.latestVersion = version;
+                }
+            }
+
             log?.WriteLine("NSP information for {0}: [{1}] {2}", filename, title.titleID, title.titleName);
 
             return title;
