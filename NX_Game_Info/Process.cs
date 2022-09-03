@@ -281,8 +281,10 @@ namespace NX_Game_Info
 
             return false;
         }
+
         public static bool updateVersionList()
         {
+            StringBuilder json_versionlist = new StringBuilder();
             string hac_versionlist = path_prefix + Common.HAC_VERSIONLIST;
 
             try
@@ -298,8 +300,7 @@ namespace NX_Game_Info
                         var content = response.Content.ReadAsStringAsync().Result;
                         if (!String.IsNullOrEmpty(content))
                         {
-                            StringBuilder versions = new StringBuilder();
-                            versions.Append("{\"titles\":[");
+                            json_versionlist.Append("{\"titles\":[");
 
                             using (StringReader reader = new StringReader(content))
                             {
@@ -307,18 +308,17 @@ namespace NX_Game_Info
 
                                 while ((line = reader.ReadLine()) != null)
                                 {
-                                    string[] split = line.Split('|');
-                                    string _id = split[0];
-                                    string _version = split[1].Trim();
+                                    string _id = line.Split('|')[0];
+                                    string _version = line.Split('|')[1].Trim();
 
                                     if (_id != "id")
                                     {
-                                        versions.Append("{\"id\":\"" + _id + "\",\"version\":" + _version + ",\"required_version\":" + _version + "},");
+                                        json_versionlist.Append("{\"id\":\"" + _id + "\",\"version\":" + _version + ",\"required_version\":" + _version + "},");
                                     }
                                 }
-                                versions.Append("],\"format_version\":1,\"last_modified\":" + DateTimeOffset.Now.ToUnixTimeSeconds() + "}");
+                                json_versionlist.Append("],\"format_version\":1,\"last_modified\":" + DateTimeOffset.Now.ToUnixTimeSeconds() + "}");
                             }
-                            content = versions.ToString();
+                            content = json_versionlist.ToString();
 
                             var versionlist = JsonConvert.DeserializeObject<Common.VersionList>(content);
 
