@@ -792,7 +792,7 @@ namespace NX_Game_Info
             progressDialog = (IProgressDialog)new ProgressDialog();
             progressDialog.StartProgressDialog(Handle, "Downloading version list");
 
-            progressDialog.SetLine(2, String.Format("Downloading from {0}", Common.HAC_VERSIONLIST_URI), true, IntPtr.Zero);
+            progressDialog.SetLine(2, String.Format("Downloading from {0}", Common.VERSIONLIST_URI), true, IntPtr.Zero);
 
             if (Process.updateVersionList())
             {

@@ -235,7 +235,7 @@ namespace NX_Game_Info
             return false;
         }
 
-        public static bool updateVersionList()
+        public static bool updateHacVersionList()
         {
             string hac_versionlist = path_prefix + Common.HAC_VERSIONLIST;
 
@@ -271,6 +271,70 @@ namespace NX_Game_Info
                             log?.WriteLine("Found {0} titles, last modified at {1}", versionList.Count, versionlist.last_modified);
 
                             File.WriteAllText(hac_versionlist, content);
+
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return false;
+        }
+        public static bool updateVersionList()
+        {
+            string hac_versionlist = path_prefix + Common.HAC_VERSIONLIST;
+            string _content = "{\"titles\":[";
+
+            try
+            {
+                log?.WriteLine("\nDownloading version list");
+
+                using (var httpClient = new HttpClient())
+                {
+                    var response = httpClient.GetAsync(Common.VERSIONLIST_URI).Result;
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var content = response.Content.ReadAsStringAsync().Result;
+                        if (!String.IsNullOrEmpty(content))
+                        {
+                            using (StringReader reader = new StringReader(content))
+                            {
+                                string line;
+                                
+                                while ((line = reader.ReadLine()) != null)
+                                {
+                                    string[] split = line.Split('|');
+                                    string _id = split[0];
+                                    string _version = split[1].Trim();
+
+                                    if (_id != "id") {
+                                        _content += "{\"id\":\"" + _id + "\",\"version\":" + _version + ",\"required_version\":" + _version + "},";
+                                    }
+                                }
+                                _content += "],\"format_version\":1,\"last_modified\":" + DateTimeOffset.Now.ToUnixTimeSeconds() + "}";
+                            }
+
+                            var versionlist = JsonConvert.DeserializeObject<Common.VersionList>(_content);
+
+                            versionList.Clear();
+
+                            foreach (var title in versionlist.titles)
+                            {
+                                string titleID = title.id;
+                                if (titleID.EndsWith("800"))
+                                {
+                                    titleID = titleID.Substring(0, Math.Min(titleID.Length, 13)) + "000";
+                                }
+
+                                versionList.TryGetValue(titleID.ToUpper(), out uint version);
+                                versionList[titleID.ToUpper()] = Math.Max(version, title.version);
+                            }
+
+                            log?.WriteLine("Found {0} titles, last modified at {1}", versionList.Count, versionlist.last_modified);
+
+                            File.WriteAllText(hac_versionlist, _content);
 
                             return true;
                         }

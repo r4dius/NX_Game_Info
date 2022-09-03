@@ -41,6 +41,7 @@ namespace NX_Game_Info
         public static readonly string HAC_VERSIONLIST = "hac_versionlist.json";
         public static readonly string TITLE_KEYS_URI = "https://gist.githubusercontent.com/gneurshkgau/81bcaa7064bd8f98d7dffd1a1f1781a7/raw/title.keys";
         public static readonly string HAC_VERSIONLIST_URI = "https://gist.githubusercontent.com/gneurshkgau/81bcaa7064bd8f98d7dffd1a1f1781a7/raw/hac_versionlist.json";
+        public static readonly string VERSIONLIST_URI = "https://raw.githubusercontent.com/16BitWonder/nx-versions/master/versions.txt";
 
 #if WINDOWS
         [DllImport("Shlwapi.dll", CharSet = CharSet.Auto)]
