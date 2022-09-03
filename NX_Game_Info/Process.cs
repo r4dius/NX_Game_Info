@@ -284,7 +284,6 @@ namespace NX_Game_Info
         public static bool updateVersionList()
         {
             string hac_versionlist = path_prefix + Common.HAC_VERSIONLIST;
-            string _content = "{\"titles\":[";
 
             try
             {
@@ -299,24 +298,29 @@ namespace NX_Game_Info
                         var content = response.Content.ReadAsStringAsync().Result;
                         if (!String.IsNullOrEmpty(content))
                         {
+                            StringBuilder versions = new StringBuilder();
+                            versions.Append("{\"titles\":[");
+
                             using (StringReader reader = new StringReader(content))
                             {
                                 string line;
-                                
+
                                 while ((line = reader.ReadLine()) != null)
                                 {
                                     string[] split = line.Split('|');
                                     string _id = split[0];
                                     string _version = split[1].Trim();
 
-                                    if (_id != "id") {
-                                        _content += "{\"id\":\"" + _id + "\",\"version\":" + _version + ",\"required_version\":" + _version + "},";
+                                    if (_id != "id")
+                                    {
+                                        versions.Append("{\"id\":\"" + _id + "\",\"version\":" + _version + ",\"required_version\":" + _version + "},");
                                     }
                                 }
-                                _content += "],\"format_version\":1,\"last_modified\":" + DateTimeOffset.Now.ToUnixTimeSeconds() + "}";
+                                versions.Append("],\"format_version\":1,\"last_modified\":" + DateTimeOffset.Now.ToUnixTimeSeconds() + "}");
                             }
+                            content = versions.ToString();
 
-                            var versionlist = JsonConvert.DeserializeObject<Common.VersionList>(_content);
+                            var versionlist = JsonConvert.DeserializeObject<Common.VersionList>(content);
 
                             versionList.Clear();
 
@@ -334,7 +338,7 @@ namespace NX_Game_Info
 
                             log?.WriteLine("Found {0} titles, last modified at {1}", versionList.Count, versionlist.last_modified);
 
-                            File.WriteAllText(hac_versionlist, _content);
+                            File.WriteAllText(hac_versionlist, content);
 
                             return true;
                         }
