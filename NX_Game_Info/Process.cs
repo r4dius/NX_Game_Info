@@ -356,26 +356,35 @@ namespace NX_Game_Info
 
             try
             {
-                Title title = processXci(filename) ?? processNsp(filename) ?? processNro(filename);
-
-                title.filename = filename;
-                title.filesize = new FileInfo(filename).Length;
-
-                string titleID = title.type == TitleType.AddOnContent ? title.titleID : title.baseTitleID ?? "";
-
-                if (latestVersions.TryGetValue(titleID, out uint version))
+                try
                 {
-                    if (title.version > version)
+                    Title title = processXci(filename) ?? processNsp(filename) ?? processNro(filename);
+
+                    title.filename = filename;
+                    title.filesize = new FileInfo(filename).Length;
+
+                    string titleID = title.type == TitleType.AddOnContent ? title.titleID : title.baseTitleID ?? "";
+
+                    if (latestVersions.TryGetValue(titleID, out uint version))
                     {
-                        latestVersions[titleID] = title.version;
+                        if (title.version > version)
+                        {
+                            latestVersions[titleID] = title.version;
+                        }
                     }
-                }
-                else
-                {
-                    latestVersions.Add(titleID, title.version);
-                }
+                    else
+                    {
+                        latestVersions.Add(titleID, title.version);
+                    }
 
-                return title;
+                    return title;
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.Forms.MessageBox.Show(String.Format("{0}", ex.Message), System.Windows.Forms.Application.ProductName, System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    log?.WriteLine("\nFile {0} has failed to process", filename);
+                    return null;
+                }
             }
             catch (MissingKeyException ex)
             {
