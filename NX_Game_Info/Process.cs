@@ -356,35 +356,30 @@ namespace NX_Game_Info
 
             try
             {
-                try
+                Title title = processXci(filename) ?? processNsp(filename) ?? processNro(filename);
+
+                title.filename = filename;
+                title.filesize = new FileInfo(filename).Length;
+
+                string titleID = title.type == TitleType.AddOnContent ? title.titleID : title.baseTitleID ?? "";
+
+                if (latestVersions.TryGetValue(titleID, out uint version))
                 {
-                    Title title = processXci(filename) ?? processNsp(filename) ?? processNro(filename);
-
-                    title.filename = filename;
-                    title.filesize = new FileInfo(filename).Length;
-
-                    string titleID = title.type == TitleType.AddOnContent ? title.titleID : title.baseTitleID ?? "";
-
-                    if (latestVersions.TryGetValue(titleID, out uint version))
+                    if (title.version > version)
                     {
-                        if (title.version > version)
-                        {
-                            latestVersions[titleID] = title.version;
-                        }
+                        latestVersions[titleID] = title.version;
                     }
-                    else
-                    {
-                        latestVersions.Add(titleID, title.version);
-                    }
-
-                    return title;
                 }
-                catch (Exception ex)
+                else
                 {
-                    System.Windows.Forms.MessageBox.Show(String.Format("{0}", ex.Message), System.Windows.Forms.Application.ProductName, System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
-                    log?.WriteLine("\nFile {0} has failed to process", filename);
-                    return null;
+                    latestVersions.Add(titleID, title.version);
                 }
+
+                return title;
+            }
+            catch (IOException ex)
+            {
+                log?.WriteLine("\nFile {0} has failed to process", filename);
             }
             catch (MissingKeyException ex)
             {
