@@ -379,6 +379,8 @@ namespace NX_Game_Info
             }
             catch (IOException ex)
             {
+                log?.WriteLine(ex.StackTrace);
+
                 log?.WriteLine("\nFile {0} has failed to process", filename);
             }
             catch (MissingKeyException ex)

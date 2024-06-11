@@ -303,6 +303,23 @@ namespace NX_Game_Info
 
             titles = Process.processHistory();
 
+            reloadListToolStripMenuItem.Enabled = false;
+            if (Common.Settings.Default.InitialType != Worker.Invalid)
+            {
+                switch (Common.Settings.Default.InitialType) {
+                    case Worker.File:
+                        if (Common.Settings.Default.InitialFiles != null && Common.Settings.Default.InitialFiles.Length > 0)
+                            reloadListToolStripMenuItem.Enabled = true;
+                        break;
+                    case Worker.Directory:
+                    case Worker.SDCard:
+                        if (!String.IsNullOrEmpty(Common.Settings.Default.InitialDirectory) && Directory.Exists(Common.Settings.Default.InitialDirectory))
+                            reloadListToolStripMenuItem.Enabled = true;
+                        break;
+                }
+                reloadListToolStripMenuItem.Enabled = true;
+            }
+
             reloadData();
 
             toolStripStatusLabel.Text = String.Format("{0} files", titles.Count);
@@ -336,6 +353,9 @@ namespace NX_Game_Info
                 toolStripStatusLabel.Text = "";
 
                 Common.Settings.Default.InitialDirectory = Path.GetDirectoryName(openFileDialog.FileNames.First());
+                Common.Settings.Default.InitialType = Worker.File;
+                reloadListToolStripMenuItem.Enabled = true;
+                Common.Settings.Default.InitialFiles = openFileDialog.FileNames;
                 Common.Settings.Default.Save();
 
                 progressDialog = (IProgressDialog)new ProgressDialog();
@@ -421,6 +441,8 @@ namespace NX_Game_Info
                 toolStripStatusLabel.Text = "";
 
                 Common.Settings.Default.InitialDirectory = folderBrowserDialog.SelectedPath;
+                Common.Settings.Default.InitialType = Worker.Directory;
+                reloadListToolStripMenuItem.Enabled = true;
                 Common.Settings.Default.Save();
 
                 progressDialog = (IProgressDialog)new ProgressDialog();
@@ -473,6 +495,8 @@ namespace NX_Game_Info
                     toolStripStatusLabel.Text = "";
 
                     Common.Settings.Default.InitialDirectory = directorypath;
+                    Common.Settings.Default.InitialType = Worker.Directory;
+                    reloadListToolStripMenuItem.Enabled = true;
                     Common.Settings.Default.Save();
 
                     progressDialog = (IProgressDialog)new ProgressDialog();
@@ -531,6 +555,8 @@ namespace NX_Game_Info
                 toolStripStatusLabel.Text = "";
 
                 Common.Settings.Default.SDCardDirectory = folderBrowserDialog.SelectedPath;
+                Common.Settings.Default.InitialType = Worker.SDCard;
+                reloadListToolStripMenuItem.Enabled = true;
                 Common.Settings.Default.Save();
 
                 Process.log?.WriteLine("SD card selected");
@@ -1097,7 +1123,7 @@ namespace NX_Game_Info
                     if (skippedList.Select(x => x.Item3).Any(x => x == SkipReason.Duplicate))
                     {
                         message += String.Format("Files do not need renaming:\n{0}",
-                            String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Duplicate).Select(x => String.Format("• \"{0}\"", x.Item1))));
+                            String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Duplicate).Select(x => String.Format("• \"{0}\"", Path.GetFileName(x.Item1)))));
                     }
                     if (skippedList.Select(x => x.Item3).Any(x => x == SkipReason.Existing))
                     {
@@ -1106,7 +1132,7 @@ namespace NX_Game_Info
                             message += "\n\n";
                         }
                         message += String.Format("Files of the same names already exist:\n{0}",
-                            String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Existing).Select(x => String.Format("• \"{0}\" to \"{1}\"", x.Item1, Path.GetFileName(x.Item2)))));
+                            String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Existing).Select(x => String.Format("• \"{0}\" to \"{1}\"", Path.GetFileName(x.Item1), Path.GetFileName(x.Item2)))));
                     }
                     if (skippedList.Select(x => x.Item3).Any(x => x == SkipReason.Missing))
                     {
@@ -1118,16 +1144,23 @@ namespace NX_Game_Info
                             String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Missing).Select(x => String.Format("• \"{0}\"", x.Item1))));
                     }
 
+                    int messageWidth = TextRenderer.MeasureText(message, Font).Width;
+                    string text = String.Format("Skip renaming {0} files", skippedList.Count);
+                    int textWidth = TextRenderer.MeasureText(text, SystemFonts.MessageBoxFont).Width;
+                    int width = Math.Min(Math.Max((Math.Max(textWidth, messageWidth) + 60)/2, 200), 400);
+                    //Console.WriteLine(textWidth + " " + text);
+                    //Console.WriteLine(messageWidth + " " + message);
+
                     TaskDialogPage page = new TaskDialogPage()
                     {
                         Title = Application.ProductName,
-                        Text = String.Format("Skip renaming {0} files", skippedList.Count),
+                        Text = text,
                         Expander =
                         {
                             Text = message,
                             ExpandFooterArea = true,
                         },
-                        Width = 350,
+                        Width = width,
                     };
 
                     new TaskDialog(page).Show(Handle);
@@ -1136,28 +1169,37 @@ namespace NX_Game_Info
                 {
                     List<Tuple<string, string>> failedList = new List<Tuple<string, string>>();
 
+                    string message = String.Join("\n", renameList.Select(x => String.Format("• \"{0}\" to \"{1}\"", Path.GetFileName(x.Item1), Path.GetFileName(x.Item2))));
+                    int messageWidth = TextRenderer.MeasureText(message, SystemFonts.MessageBoxFont).Width;
+                    string text = String.Format("{0} of {1} files will be renamed. Do you wish to continue renaming?", renameList.Count, selectedCount);
+                    int textWidth = TextRenderer.MeasureText(text, SystemFonts.MessageBoxFont).Width;
+                    int width = Math.Min(Math.Max((Math.Max(textWidth, messageWidth) + 60) / 2, 200), 400);
+
                     TaskDialogPage page = new TaskDialogPage()
                     {
                         Title = Application.ProductName,
-                        Text = String.Format("{0} of {1} files will be renamed. Do you wish to continue renaming?", renameList.Count, selectedCount),
+                        Text = text,
                         Expander =
                         {
-                            Text = String.Join("\n", renameList.Select(x => String.Format("• \"{0}\" to \"{1}\"", x.Item1, Path.GetFileName(x.Item2)))),
+                            Text = message,
                             ExpandFooterArea = true,
                         },
-                        StandardButtons =
-                        {
-                            new TaskDialogStandardButton(TaskDialogResult.OK)
-                            {
-                                DefaultButton = true,
-                            },
-                            new TaskDialogStandardButton(TaskDialogResult.Cancel),
-                        },
-                        Width = 350,
+                        Width = width,
                     };
 
-                    if (((TaskDialogStandardButton)new TaskDialog(page).Show(Handle)).Result == TaskDialogResult.OK)
+                    var buttonYes = page.StandardButtons.Add(TaskDialogResult.OK);
+                    buttonYes.DefaultButton = true;
+                    var buttonClose = page.StandardButtons.Add(TaskDialogResult.Cancel);
+
+                    bool clicked = false;
+                    buttonYes.Click += (s1, e1) =>
                     {
+                        // When clicking the "Yes" button, don't close the dialog but update text
+                        if (clicked) return;
+                        clicked = true;
+                        e1.CancelClose = true;
+
+
                         int index = historyToolStripMenuItem.DropDownItems.OfType<ToolStripMenuItem>().Select((item, i) => new { item, i }).FirstOrDefault(x => x.item.Checked)?.i ?? -1;
 
                         foreach (Tuple<string, string> rename in renameList)
@@ -1191,12 +1233,12 @@ namespace NX_Game_Info
 
                         reloadData();
 
-                        string message = "";
+                        message = "";
 
                         if (failedList.Any())
                         {
                             message += String.Format("Failed to rename files:\n{0}",
-                                String.Join("\n", failedList.Select(x => String.Format("\"{0}\" to \"{1}\"", x.Item1, Path.GetFileName(x.Item2)))));
+                                String.Join("\n", failedList.Select(x => String.Format("\"{0}\" to \"{1}\"", Path.GetFileName(x.Item1), Path.GetFileName(x.Item2)))));
                         }
                         if (skippedList.Select(x => x.Item3).Any(x => x == SkipReason.Duplicate))
                         {
@@ -1205,7 +1247,7 @@ namespace NX_Game_Info
                                 message += "\n\n";
                             }
                             message += String.Format("Files do not need renaming:\n{0}",
-                                String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Duplicate).Select(x => String.Format("• \"{0}\"", x.Item1))));
+                                String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Duplicate).Select(x => String.Format("• \"{0}\"", Path.GetFileName(x.Item1)))));
                         }
                         if (skippedList.Select(x => x.Item3).Any(x => x == SkipReason.Existing))
                         {
@@ -1214,7 +1256,7 @@ namespace NX_Game_Info
                                 message += "\n\n";
                             }
                             message += String.Format("Files of the same names already exist:\n{0}",
-                                String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Existing).Select(x => String.Format("• \"{0}\" to \"{1}\"", x.Item1, Path.GetFileName(x.Item2)))));
+                                String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Existing).Select(x => String.Format("• \"{0}\" to \"{1}\"", Path.GetFileName(x.Item1), Path.GetFileName(x.Item2)))));
                         }
                         if (skippedList.Select(x => x.Item3).Any(x => x == SkipReason.Missing))
                         {
@@ -1226,21 +1268,14 @@ namespace NX_Game_Info
                                 String.Join("\n", skippedList.Where(x => x.Item3 == SkipReason.Missing).Select(x => String.Format("• \"{0}\"", x.Item1))));
                         }
 
-                        TaskDialogPage dialogPage = new TaskDialogPage()
-                        {
-                            Title = Application.ProductName,
-                            Text = String.Format("{0} of {1} files renamed" + (failedList.Count > 0 ? ". {2} files failed to rename" : ""),
-                                renameList.Count - failedList.Count, selectedCount, failedList.Count),
-                            Expander =
-                            {
-                                Text = message,
-                                ExpandFooterArea = true,
-                            },
-                            Width = 350,
-                        };
+                        page.Text = String.Format("{0} of {1} files renamed" + (failedList.Count > 0 ? ". {2} files failed to rename" : ""),
+                                renameList.Count - failedList.Count, selectedCount, failedList.Count);
+                        page.Expander.Text = message;
 
-                        new TaskDialog(dialogPage).Show(Handle);
-                    }
+                        buttonClose.Enabled = false;
+                    };
+
+                    new TaskDialog(page).Show(Handle);
                 }
             }
 
@@ -1551,6 +1586,51 @@ namespace NX_Game_Info
                 progressDialog.StopProgressDialog();
 
                 MessageBox.Show(String.Format("{0}.", error), Application.ProductName);
+            }
+        }
+
+        private void reloadListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (backgroundWorkerProcess.IsBusy)
+            {
+                MessageBox.Show("Please wait until the current process is finished and try again.", Application.ProductName);
+                return;
+            }
+
+            switch (Common.Settings.Default.InitialType)
+            {
+                case Worker.File:
+                    objectListView.Items.Clear();
+                    toolStripStatusLabel.Text = "";
+                    Process.log?.WriteLine("\nReload File");
+
+                    progressDialog = (IProgressDialog)new ProgressDialog();
+                    progressDialog.StartProgressDialog(Handle, "Opening files");
+
+                    backgroundWorkerProcess.RunWorkerAsync((Worker.File, Common.Settings.Default.InitialFiles));
+                    break;
+                case Worker.Directory:
+                case Worker.SDCard:
+                    if (Directory.Exists(Common.Settings.Default.InitialDirectory))
+                    {
+                        objectListView.Items.Clear();
+                        toolStripStatusLabel.Text = "";
+                        Process.log?.WriteLine("\nReload " + Enum.GetName(typeof(Worker), Common.Settings.Default.InitialType));
+
+                        progressDialog = (IProgressDialog)new ProgressDialog();
+                        progressDialog.StartProgressDialog(Handle, String.Format("Opening files from directory {0}", Common.Settings.Default.InitialDirectory));
+
+                        backgroundWorkerProcess.RunWorkerAsync((Common.Settings.Default.InitialType, Common.Settings.Default.InitialDirectory));
+                    }
+                    else
+                    {
+                        DialogResult dialogResult = MessageBox.Show("Directory \"" + Common.Settings.Default.InitialDirectory + "\" doesn't exist", Application.ProductName, MessageBoxButtons.OK);
+                        Common.Settings.Default.InitialDirectory = "";
+                        Common.Settings.Default.InitialType = Worker.Invalid;
+                        reloadListToolStripMenuItem.Enabled = false;
+                        Common.RecentDirectories.Default.Save();
+                    }
+                    break;
             }
         }
     }

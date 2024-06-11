@@ -15,6 +15,7 @@ using System.Xml.Serialization;
 using Foundation;
 #endif
 using LibHac;
+using static NX_Game_Info.Main;
 
 #pragma warning disable IDE1006 // Naming rule violation: These words must begin with upper case characters
 
@@ -59,6 +60,22 @@ namespace NX_Game_Info
             {
                 get { return (int)this["Version"]; }
                 set { this["Version"] = value; }
+            }
+
+            [UserScopedSetting()]
+            [DefaultSettingValue("")]
+            public string[] InitialFiles
+            {
+                get { return (string[])this["InitialFiles"]; }
+                set { this["InitialFiles"] = value; }
+            }
+
+            [UserScopedSetting()]
+            [DefaultSettingValue("")]
+            public Worker InitialType
+            {
+                get { return (Worker)this["InitialType"]; }
+                set { this["InitialType"] = value; }
             }
 
             [UserScopedSetting()]
