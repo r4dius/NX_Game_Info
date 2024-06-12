@@ -309,15 +309,20 @@ namespace NX_Game_Info
                 switch (Common.Settings.Default.InitialType) {
                     case Worker.File:
                         if (Common.Settings.Default.InitialFiles != null && Common.Settings.Default.InitialFiles.Length > 0)
+                        {
                             reloadListToolStripMenuItem.Enabled = true;
+                        }
                         break;
                     case Worker.Directory:
                     case Worker.SDCard:
                         if (!String.IsNullOrEmpty(Common.Settings.Default.InitialDirectory) && Directory.Exists(Common.Settings.Default.InitialDirectory))
+                        {
                             reloadListToolStripMenuItem.Enabled = true;
+                        }
+                        break;
+                    defaut:
                         break;
                 }
-                reloadListToolStripMenuItem.Enabled = true;
             }
 
             reloadData();
@@ -1148,8 +1153,6 @@ namespace NX_Game_Info
                     string text = String.Format("Skip renaming {0} files", skippedList.Count);
                     int textWidth = TextRenderer.MeasureText(text, SystemFonts.MessageBoxFont).Width;
                     int width = Math.Min(Math.Max((Math.Max(textWidth, messageWidth) + 60)/2, 200), 400);
-                    //Console.WriteLine(textWidth + " " + text);
-                    //Console.WriteLine(messageWidth + " " + message);
 
                     TaskDialogPage page = new TaskDialogPage()
                     {
@@ -1192,10 +1195,13 @@ namespace NX_Game_Info
                     var buttonClose = page.StandardButtons.Add(TaskDialogResult.Cancel);
 
                     bool clicked = false;
-                    buttonYes.Click += (s1, e1) =>
+                    buttonYes.Click += (_, e1) =>
                     {
                         // When clicking the "Yes" button, don't close the dialog but update text
-                        if (clicked) return;
+                        if (clicked)
+                        {
+                            return;
+                        }
                         clicked = true;
                         e1.CancelClose = true;
 
@@ -1624,12 +1630,13 @@ namespace NX_Game_Info
                     }
                     else
                     {
-                        DialogResult dialogResult = MessageBox.Show("Directory \"" + Common.Settings.Default.InitialDirectory + "\" doesn't exist", Application.ProductName, MessageBoxButtons.OK);
+                        MessageBox.Show("Directory \"" + Common.Settings.Default.InitialDirectory + "\" doesn't exist", Application.ProductName, MessageBoxButtons.OK);
                         Common.Settings.Default.InitialDirectory = "";
                         Common.Settings.Default.InitialType = Worker.Invalid;
                         reloadListToolStripMenuItem.Enabled = false;
-                        Common.RecentDirectories.Default.Save();
                     }
+                    break;
+                default:
                     break;
             }
         }
