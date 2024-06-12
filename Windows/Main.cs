@@ -1636,8 +1636,6 @@ namespace NX_Game_Info
                         reloadListToolStripMenuItem.Enabled = false;
                     }
                     break;
-                default:
-                    break;
             }
         }
     }
